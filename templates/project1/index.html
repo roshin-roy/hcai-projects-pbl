@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Project 1 — Upload data{% endblock %}
+
+{% block content %}
+<div class="box">
+    <h1>Supervised Learning Interface</h1>
+    <p class="centered-text">Upload a CSV dataset to visualize it and train machine
+    learning models. The first row must be feature names and the
+    <strong>last column</strong> must be the label to predict.</p>
+
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+    <form action="{% url 'project1:upload' %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="csv_file">CSV file:</label>
+        <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+        <button type="submit">Upload &amp; continue</button>
+    </form>
+
+    <p class="centered-text"><a href="{% url 'home:index' %}">&larr; Back to home</a></p>
+</div>
+{% endblock %}

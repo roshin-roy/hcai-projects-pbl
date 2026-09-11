@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Your movie preferences{% endblock %}
+
+{% block content %}
+<div class="box">
+    <h1>Your estimated movie preferences</h1>
+
+    <p class="centered-text">
+        You completed {{ n_pairwise }} pairwise choices and
+        {{ n_rankings }} rankings. We fitted a separate preference
+        model using the answers from each method.
+    </p>
+
+    <p class="centered-text">
+        The fitted weights show how different movie features contribute to
+        your estimated preferences. Positive values indicate higher preference
+        and negative values indicate lower preference.
+    </p>
+
+    <h2>From pairwise choices</h2>
+
+    <p class="centered-text hint">
+        Estimated from your pairwise choices using the Bradley-Terry model.
+        The values in brackets are the fitted feature weights.
+    </p>
+
+    <div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center;">
+        <div style="flex:1 1 260px;">
+            <h3>Features with positive weights</h3>
+            <ul>
+                {% for label, weight in liked_bt %}
+                    <li>
+                        {{ label }}
+                        <span class="hint">
+                            ({{ weight|floatformat:2 }})
+                        </span>
+                    </li>
+                {% empty %}
+                    <li>No positive weights to display.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div style="flex:1 1 260px;">
+            <h3>Features with negative weights</h3>
+            <ul>
+                {% for label, weight in disliked_bt %}
+                    <li>
+                        {{ label }}
+                        <span class="hint">
+                            ({{ weight|floatformat:2 }})
+                        </span>
+                    </li>
+                {% empty %}
+                    <li>No negative weights to display.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>From movie rankings</h2>
+
+    <p class="centered-text hint">
+        Estimated from your movie rankings using the Plackett-Luce model.
+        The values in brackets are the fitted feature weights.
+    </p>
+
+    <div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center;">
+        <div style="flex:1 1 260px;">
+            <h3>Features with positive weights</h3>
+            <ul>
+                {% for label, weight in liked_pl %}
+                    <li>
+                        {{ label }}
+                        <span class="hint">
+                            ({{ weight|floatformat:2 }})
+                        </span>
+                    </li>
+                {% empty %}
+                    <li>No positive weights to display.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div style="flex:1 1 260px;">
+            <h3>Features with negative weights</h3>
+            <ul>
+                {% for label, weight in disliked_pl %}
+                    <li>
+                        {{ label }}
+                        <span class="hint">
+                            ({{ weight|floatformat:2 }})
+                        </span>
+                    </li>
+                {% empty %}
+                    <li>No negative weights to display.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <p class="centered-text hint">
+        The two methods can produce different estimates because they are
+        based on different types of preference input.
+    </p>
+
+    <hr>
+
+    <div class="button-container">
+        <a href="{% url 'project4:reset' %}">
+            <button type="button">Restart study</button>
+        </a>
+    </div>
+
+    <p class="centered-text">
+        <a href="{% url 'project4:index' %}">
+            &larr; Back to Project 4
+        </a>
+        &middot;
+        <a href="{% url 'home:index' %}">Home</a>
+    </p>
+</div>
+
+<script>
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+</script>
+{% endblock %}

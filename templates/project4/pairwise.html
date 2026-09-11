@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Pairwise choice{% endblock %}
+{% block content %}
+<div class="box">
+    <h1>Which would you rather watch?</h1>
+
+    <p class="centered-text hint">
+        Pairwise task {{ progress }} of {{ total }}
+    </p>
+
+    <p class="centered-text hint">
+        You do not need to have seen these movies. Choose based on the
+        information shown and what you would prefer to watch.
+    </p>
+
+    <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;">
+        <form action="{% url 'project4:pairwise_submit' %}" method="POST" style="flex:1 1 300px;max-width:360px;background:none;border:none;padding:0;">
+            {% csrf_token %}
+            <input type="hidden" name="task_number" value="{{ progress }}">
+            <input type="hidden" name="winner" value="{{ movie_a.idx }}">
+            <button type="submit" style="width:100%;text-align:left;padding:18px;min-height:150px;">
+                <strong>{{ movie_a.title }}</strong> ({{ movie_a.year }})<br>
+                <span style="font-weight:normal;font-size:0.9em;">{{ movie_a.genres }}<br>
+                IMDB {{ movie_a.score }} &middot; {{ movie_a.duration }} min</span>
+            </button>
+        </form>
+        <form action="{% url 'project4:pairwise_submit' %}" method="POST" style="flex:1 1 300px;max-width:360px;background:none;border:none;padding:0;">
+            {% csrf_token %}
+            <input type="hidden" name="task_number" value="{{ progress }}">
+            <input type="hidden" name="winner" value="{{ movie_b.idx }}">
+            <button type="submit" style="width:100%;text-align:left;padding:18px;min-height:150px;">
+                <strong>{{ movie_b.title }}</strong> ({{ movie_b.year }})<br>
+                <span style="font-weight:normal;font-size:0.9em;">{{ movie_b.genres }}<br>
+                IMDB {{ movie_b.score }} &middot; {{ movie_b.duration }} min</span>
+            </button>
+        </form>
+    </div>
+</div>
+<script>if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }</script>
+{% endblock %}

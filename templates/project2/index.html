@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Project 2 — Explainability{% endblock %}
+
+{% block content %}
+<div class="box">
+    <h1>Explainability: Interpretability vs Complexity</h1>
+    <p class="centered-text">
+        We use the Palmer Penguins dataset to predict the penguin species.
+        Choose a decision tree or logistic regression model and adjust
+        &lambda; to control the trade-off between test accuracy and model
+        complexity.
+    </p>
+
+    <p class="centered-text hint">
+        For each value of &lambda;, we select the model with the highest value of
+        <code>test accuracy &minus; &lambda; &times; model complexity</code>.
+    </p>
+
+    <form action="{% url 'project2:index' %}" method="GET">
+        <label>Model class:</label>
+        <select name="model_class" onchange="this.form.submit()">
+            <option value="tree" {% if model_class == 'tree' %}selected{% endif %}>Decision Tree</option>
+            <option value="logistic" {% if model_class == 'logistic' %}selected{% endif %}>Logistic Regression (L1)</option>
+        </select>
+
+        <label>&lambda; = <span id="lam-value">{{ lam }}</span></label>
+        <input type="range" name="lambda" min="0" max="{{ lam_max }}" step="0.001"
+               value="{{ lam }}"
+               oninput="document.getElementById('lam-value').innerText=this.value"
+               onchange="this.form.submit()">
+
+        <noscript><button type="submit">Update</button></noscript>
+    </form>
+
+    <hr>
+
+    <h2>Selected model</h2>
+    <p class="centered-text best">
+        {{ complexity_label }} = <strong>{{ best.complexity }}</strong> &middot;
+        test accuracy = <strong>{{ best.acc_test|floatformat:4 }}</strong>
+        <br><span class="hint">({{ best.param_label }})</span>
+    </p>
+    <img src="{{ model_image_url }}" alt="Selected model" class="plot">
+
+    <h2>Accuracy vs {{ complexity_label }} (whole sweep)</h2>
+        <img src="{{ curve_url }}" alt="Complexity sweep curve" class="plot">
+
+    <hr>
+
+    <h2>Counterfactual explanations</h2>
+    <p class="centered-text">
+        Pick an example from the dataset and a target species. The app samples
+        nearby points and returns the closest ones that the selected model
+        predicts as the target species.
+    </p>
+
+    <form action="{% url 'project2:index' %}" method="GET">
+        <input type="hidden" name="model_class" value="{{ model_class }}">
+        <input type="hidden" name="lambda" value="{{ lam }}">
+
+        <label>Example (row 0 to {{ n_examples|add:"-1" }}):</label>
+        <input type="number" name="cf_index" min="0" max="{{ n_examples|add:"-1" }}" value="{{ cf_index }}">
+
+        <label>Target species:</label>
+        <select name="cf_target">
+            <option value="" {% if not cf_target %}selected{% endif %}>-- choose --</option>
+            {% for c in class_names %}
+                <option value="{{ c }}" {% if c == cf_target %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Find counterfactuals</button>
+    </form>
+
+    {% if cf_error %}
+        <p class="error">{{ cf_error }}</p>
+    {% endif %}
+
+    {% if cf_results %}
+        <p class="centered-text">
+            Example #{{ cf_index }} — true species: <strong>{{ cf_true_label }}</strong> &middot;
+            target: <strong>{{ cf_target }}</strong> &middot;
+            searched {{ cf_info.final_N }} candidates over {{ cf_info.rounds_used }} round(s),
+            found {{ cf_info.n_found }} valid counterfactual(s).
+            Changed features are highlighted.
+        </p>
+
+        <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    {% for f in feature_names %}<th>{{ f }}</th>{% endfor %}
+                    <th>Distance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>original</td>
+                    {% for v in cf_original_cells %}<td>{{ v }}</td>{% endfor %}
+                    <td>&mdash;</td>
+                </tr>
+                {% for r in cf_results %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    {% for cell in r.cells %}
+                        <td {% if cell.changed %}class="row-best"{% endif %}>{{ cell.value }}</td>
+                    {% endfor %}
+                    <td>{{ r.distance }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% elif cf_target %}
+        <p class="centered-text">No counterfactuals found — try again or pick a different target.</p>
+    {% endif %}
+
+    <hr>
+
+    <hr>
+
+    <h2>Feature effect plots</h2>
+    <p class="centered-text">
+        Pick one of the four numeric features to see its effect on the predicted
+        probability of each species, using the model currently selected above.
+        <br><span class="hint">PDP shows the average prediction when a feature is varied.
+        ALE uses local prediction changes within intervals of the selected feature.</span>
+    </p>
+    <p class="centered-text hint">
+        ALE here uses binned finite differences for both model types. Logistic
+        regression is differentiable, so its partial derivatives could be computed
+        analytically; a decision tree is piecewise constant and has no derivative
+        at its split points, so discretization is the only option there.
+    </p>
+
+    <form action="{% url 'project2:index' %}" method="GET">
+        <input type="hidden" name="model_class" value="{{ model_class }}">
+        <input type="hidden" name="lambda" value="{{ lam }}">
+
+        <label>Feature:</label>
+        <select name="fx_feature" onchange="this.form.submit()">
+            <option value="" {% if not fx_feature %}selected{% endif %}>-- choose --</option>
+            {% for f in plot_features %}
+                <option value="{{ f }}" {% if f == fx_feature %}selected{% endif %}>{{ f }}</option>
+            {% endfor %}
+        </select>
+        <noscript><button type="submit">Show plots</button></noscript>
+    </form>
+
+    {% if fx_error %}
+        <p class="error">{{ fx_error }}</p>
+    {% endif %}
+
+    {% if effects_url %}
+        <img src="{{ effects_url }}" alt="PDP and ALE for {{ fx_feature }}" class="plot">
+    {% endif %}
+
+    <p class="centered-text"><a href="{% url 'home:index' %}">&larr; Home</a></p>
+</div>
+
+<script>if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }</script>
+
+{% endblock %}

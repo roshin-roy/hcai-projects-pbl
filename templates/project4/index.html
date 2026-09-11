@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Project 4 — Preference Elicitation{% endblock %}
+
+{% block content %}
+<div class="box">
+    <h1>Preference Elicitation for Movie Recommendation</h1>
+    <p class="centered-text">
+        This project compares two ways of collecting movie preferences.
+        In one task, you choose between two movies. In the other, you rank
+        ten movies from the one you would most like to watch to the one
+        you would least like to watch.
+    </p>
+
+    <p class="centered-text">
+        Your answers are used to estimate a preference model for each method.
+        The report explains the movie features, the models, and the proposed
+        study procedure.
+    </p>
+
+    <p class="centered-text">
+        Feature representation: <strong>{{ n_features }}</strong> interpretable
+        features extracted from <strong>{{ n_movies }}</strong> movies
+        (IMDB 5000 dataset).
+    </p>
+
+    <h2>Study materials</h2>
+    <div class="button-container">
+        <a href="{% static 'project4/report.pdf' %}" download>
+            <button type="button">Download report</button>
+        </a>
+    </div>
+    <div class="button-container">
+        <a href="{% url 'project4:start' %}">
+            <button type="button">Start the study</button>
+        </a>
+    </div>
+
+    <hr>
+    <p class="centered-text"><a href="{% url 'home:index' %}">&larr; Home</a></p>
+</div>
+{% endblock %}

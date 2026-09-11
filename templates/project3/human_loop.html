@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Project 3 — Human Expert Loop{% endblock %}
+
+{% block content %}
+<div class="box">
+    <h1>Active Learning with a Human Expert</h1>
+    <p class="centered-text">
+        This page lets you take the role of the expert. The classifier selects
+        the article for which it has the lowest confidence, and you assign one
+        of the four AG News topics. The original dataset label is hidden while
+        you answer and is used afterward to evaluate your answers.
+    </p>
+
+    <p class="centered-text">
+        Articles labelled so far: <strong>{{ n_labeled }}</strong>
+    </p>
+
+    {% if article_text %}
+    <h2>Please label this article</h2>
+    <div class="table-wrap">
+        <p style="max-width:800px;margin:12px auto;padding:16px;background:#f4f6fb;border-radius:8px;">
+            {{ article_text }}
+        </p>
+    </div>
+    <form action="{% url 'project3:human_loop_submit' %}" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="position" value="{{ query_position }}">
+        {% for value, name in class_choices %}
+            <button type="submit" name="label" value="{{ value }}">{{ name }}</button>
+        {% endfor %}
+    </form>
+    {% else %}
+    <p class="centered-text">No more articles to label in the pool.</p>
+    {% endif %}
+
+    {% if overall_accuracy is not None %}
+    <hr>
+
+    <h2>Results from your labels</h2>
+
+    <p class="centered-text">
+        Accuracy on the articles labelled so far:
+        <strong>{{ overall_accuracy }}</strong>
+    </p>
+
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Topic</th>
+                    <th>Correct labels</th>
+                    <th>Articles seen</th>
+                    <th>Estimated accuracy</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in competence_rows %}
+                    <tr>
+                        <td>{{ row.name }}</td>
+                        <td>{{ row.correct }}</td>
+                        <td>{{ row.total }}</td>
+                        <td>
+                            {% if row.accuracy is not None %}
+                                {{ row.accuracy }}
+                            {% else %}
+                                No article seen yet
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <p class="centered-text hint">
+        These values are based only on the articles labelled in this
+        session. With only a few examples, the per-topic estimates can
+        change considerably.
+    </p>
+    {% else %}
+    <p class="centered-text hint">
+        Submit a few labels to see the results.
+    </p>
+    {% endif %}
+    
+    <hr>
+    <form action="{% url 'project3:human_loop_reset' %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" style="background:#b00020;">Reset my labels</button>
+    </form>
+
+    <p class="centered-text">
+        <a href="{% url 'project3:index' %}">&larr; Back to Project 3</a> &middot;
+        <a href="{% url 'home:index' %}">Home</a>
+    </p>
+</div>
+
+<script>if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }</script>
+{% endblock %}

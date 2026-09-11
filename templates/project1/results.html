@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Project 1 — Results{% endblock %}
+
+{% block content %}
+<div class="box">
+    <h1>Training results</h1>
+    <p class="centered-text">
+        Dataset <strong>{{ dataset_name }}</strong> &middot;
+        {{ problem_type }} &middot; model <strong>{{ result.model_label }}</strong><br>
+        {{ result.n_train }} train / {{ result.n_test }} test samples
+        (test size {{ test_size }})
+    </p>
+
+    <h2>Best configuration</h2>
+    <p class="centered-text best">
+        {{ result.param_name }} = <strong>{{ result.best.value }}</strong> &rarr;
+        test {{ result.score_name }} = <strong>{{ result.best.test_score }}</strong>
+        (train {{ result.best.train_score }})
+    </p>
+
+    <h2>{{ result.score_name }} vs {{ result.param_name }}</h2>
+    <img src="{{ result.plot_url }}" alt="Hyperparameter sweep" class="plot">
+
+    <h2>All values tried</h2>
+    <div class="table-wrap">
+    <table class="data-table">
+        <thead><tr>
+            <th>{{ result.param_name }}</th><th>Train {{ result.score_name }}</th><th>Test {{ result.score_name }}</th>
+        </tr></thead>
+        <tbody>
+        {% for row in result.rows %}
+            <tr {% if row.value == result.best.value %}class="row-best"{% endif %}>
+                <td>{{ row.value }}</td><td>{{ row.train_score }}</td><td>{{ row.test_score }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    <p class="centered-text">
+        <a href="{% url 'project1:dataset' %}">&larr; Back to dataset</a> &middot;
+        <a href="{% url 'home:index' %}">Home</a>
+    </p>
+</div>
+{% endblock %}

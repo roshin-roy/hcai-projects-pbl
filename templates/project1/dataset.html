@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Project 1 — {{ dataset_name }}{% endblock %}
+
+{% block content %}
+<div class="box">
+    <h1>Dataset: {{ dataset_name }}</h1>
+
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+    <p class="centered-text">
+        {{ summary.n_rows }} rows &middot; {{ summary.n_cols }} columns &middot;
+        target = <strong>{{ summary.target }}</strong> &middot;
+        detected problem: <strong>{{ problem_type }}</strong>
+    </p>
+
+    <h2>Data preview (first 10 rows)</h2>
+    <div class="table-wrap">{{ summary.preview_html|safe }}</div>
+
+    <hr>
+
+    <!-- ---------- Visualization ---------- -->
+    <h2>Visualize</h2>
+    <form action="{% url 'project1:visualize' %}" method="POST">
+        {% csrf_token %}
+        <label>X axis:</label>
+        <select name="feature_x">
+            {% for f in features %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
+        </select>
+
+        <label>Y axis:</label>
+        <select name="feature_y">
+            {% for f in features %}<option value="{{ f }}" {% if forloop.counter == 2 %}selected{% endif %}>{{ f }}</option>{% endfor %}
+        </select>
+
+        <button type="submit">Plot</button>
+    </form>
+
+    {% if scatter_url %}
+        <img src="{{ scatter_url }}" alt="Scatter plot" class="plot">
+    {% endif %}
+
+    <hr>
+
+    <!-- ---------- Training  ---------- -->
+    <h2>Train a model</h2>
+<p class="centered-text">
+    Training uses numeric feature columns and the last column as the target.
+    Text feature columns are excluded. Missing numeric values are replaced
+    with medians calculated from the training set.
+    The selected model is evaluated across several hyperparameter values.
+</p>
+    <form action="{% url 'project1:train' %}" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="problem_type" value="{{ problem_type }}">
+
+        <label>Model:</label>
+        <select name="model">
+            {% for key, label in models %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+
+        <label>Test size:</label>
+        <input type="number" name="test_size" value="0.2" min="0.1" max="0.5" step="0.05">
+
+        <label>Score:</label>
+        <select name="score">
+            {% for key, label in scores %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+
+        <button type="submit">Train &amp; evaluate</button>
+    </form>
+
+    <p class="centered-text">
+        <a href="{% url 'project1:index' %}">Upload a different dataset</a> &middot;
+        <a href="{% url 'home:index' %}">Home</a>
+    </p>
+</div>
+{% endblock %}

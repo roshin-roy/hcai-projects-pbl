@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Ranking{% endblock %}
+{% block content %}
+<div class="box">
+    <h1>Rank these movies</h1>
+    <p class="centered-text hint">Ranking task {{ progress }} of {{ total }} &middot;
+    assign 1 (most preferred) to {{ movies|length }} (least). Use each rank exactly once.</p>
+
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <p id="dup-warning" class="error" style="display:none;">Some ranks are used more than once &mdash; each must be unique.</p>
+    <p class="centered-text hint">
+        You do not need to have seen these movies. Rank them based on the
+        information shown, from the one you would most like to watch
+        to the one you would least like to watch.
+    </p>
+    <form action="{% url 'project4:ranking_submit' %}" method="POST" id="rank-form">
+        {% csrf_token %}
+        <div class="table-wrap">
+        <table class="data-table" style="min-width:80%;">
+            <thead><tr><th>Rank</th><th>Movie</th><th>Details</th></tr></thead>
+            <tbody>
+            {% for m in movies %}
+                <tr>
+                    <td>
+                        <select name="rank_{{ m.idx }}" class="rank-select" required>
+                            <option value="">&mdash;</option>
+                            {% for r in rank_choices %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+                        </select>
+                    </td>
+                    <td style="text-align:left;"><strong>{{ m.title }}</strong> ({{ m.year }})</td>
+                    <td style="text-align:left;font-size:0.9em;">{{ m.genres }}<br>IMDB {{ m.score }} &middot; {{ m.duration }} min</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <div class="button-container"><button type="submit" id="submit-btn">Submit ranking</button></div>
+    </form>
+</div>
+
+<script>
+(function(){
+    var selects = Array.prototype.slice.call(document.querySelectorAll('.rank-select'));
+    var warning = document.getElementById('dup-warning');
+    var btn = document.getElementById('submit-btn');
+    function check(){
+        var counts = {}, dup = false;
+        selects.forEach(function(s){ if(s.value){ counts[s.value]=(counts[s.value]||0)+1; }});
+        selects.forEach(function(s){
+            var isDup = s.value && counts[s.value] > 1;
+            s.style.outline = isDup ? '2px solid #c0392b' : '';
+            if(isDup){ dup = true; }
+        });
+        warning.style.display = dup ? 'block' : 'none';
+        btn.disabled = dup;
+    }
+    selects.forEach(function(s){ s.addEventListener('change', check); });
+})();
+if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }
+</script>
+{% endblock %}

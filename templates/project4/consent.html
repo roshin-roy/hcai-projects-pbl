@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Study — Consent & Instructions{% endblock %}
+
+{% block content %}
+<div class="box">
+    <h1>Before you begin</h1>
+    <p>
+        This is a research study on how people express movie preferences. You
+        will complete two kinds of tasks:
+    </p>
+    <ul style="max-width:700px;margin:12px auto;">
+        <li><strong>Pairwise choice:</strong> you see two movies and pick the one
+        you'd rather watch.</li>
+        <li><strong>Ranking:</strong> you see ten movies and order them from most
+        to least preferred.</li>
+    </ul>
+    <p class="centered-text">
+        Your responses are stored for the current study session and are used to
+        estimate your movie preferences at the end. Participation is
+        voluntary and you may stop at any time.
+    </p>
+    <p class="centered-text hint">
+        You will do the two designs in this order:
+        <strong>{{ order.0 }}</strong>, then <strong>{{ order.1 }}</strong>
+        The order is selected randomly.
+    </p>
+
+    <div class="button-container">
+        <a href="{% url 'project4:task' %}"><button type="button">I understand &mdash; begin</button></a>
+    </div>
+    <p class="centered-text"><a href="{% url 'project4:index' %}">&larr; Cancel</a></p>
+</div>
+{% endblock %}

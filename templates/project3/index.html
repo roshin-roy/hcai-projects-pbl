@@ -1,0 +1,394 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Project 3 — Learning-to-Defer{% endblock %}
+
+{% block content %}
+<div class="box">
+
+    <h1>Learning-to-Defer for AG News</h1>
+
+    <p class="centered-text">
+        In this project, we use the AG News dataset to examine how a
+        text classifier can work with an imperfect expert. For each article,
+        the system must decide whether to keep the classifier's prediction
+        or ask the expert.
+    </p>
+
+    <p class="centered-text">
+        <a href="{% static 'project3/report.pdf' %}" download>
+            <button type="button">Download project report (PDF)</button>
+        </a>
+    </p>
+
+    <h2>Baseline classifier</h2>
+
+    <p class="centered-text">
+        Model: TF-IDF (1–2 grams, 50k features, English stop words)
+        + Logistic Regression.
+        <br>
+        Trained on <strong>{{ n_train }}</strong> examples and evaluated on
+        <strong>{{ n_test }}</strong> test examples.
+        <br>
+        <span class="hint">
+            Model was {{ source }}. Training took approximately {{ fit_time }} seconds.
+        </span>
+    </p>
+
+    <p class="centered-text best">
+        Test accuracy: <strong>{{ test_accuracy }}</strong>
+    </p>
+
+    <img
+        src="{{ comparison_chart_url }}"
+        alt="Classifier and simulated expert comparison"
+        class="plot"
+    >
+
+    <h2>Per-class performance</h2>
+
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1</th>
+                    <th>Support</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in per_class_rows %}
+                    <tr>
+                        <td>{{ row.name }}</td>
+                        <td>{{ row.precision }}</td>
+                        <td>{{ row.recall }}</td>
+                        <td>{{ row.f1 }}</td>
+                        <td>{{ row.support }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+
+    <h2>Learning-to-Defer</h2>
+
+    <p class="centered-text">
+        We compare two ways of deciding when to consult the expert.
+        The first uses a threshold on the classifier's confidence.
+        The second learns from examples for which both classifier and
+        expert predictions are available.
+    </p>
+
+    <h3 class="centered-text">
+        Strategy 1: Confidence threshold
+    </h3>
+
+    <p class="centered-text">
+    If the classifier's confidence falls below the threshold, the
+    article is sent to the expert. The threshold is selected using
+    the tuning data and is not changed on the test set.
+    </p>
+
+    {% with m=defer_metrics.naive %}
+
+        <p class="centered-text">
+            Threshold &tau; =
+            <strong>{{ m.threshold|floatformat:3 }}</strong>
+            &middot;
+
+            System accuracy:
+            <strong>{{ m.system_acc|floatformat:4 }}</strong>
+
+            (classifier-only:
+            {{ m.classifier_only_acc|floatformat:4 }},
+
+            <span class="{% if m.improvement_over_classifier > 0 %}best{% else %}error{% endif %}">
+                {% if m.improvement_over_classifier > 0 %}+{% endif %}
+                {{ m.improvement_over_classifier|floatformat:4 }}
+            </span>)
+
+            &middot;
+
+            Defer rate:
+            {{ m.defer_rate|floatformat:3 }}
+        </p>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Helpful</th>
+                        <th>Harmful</th>
+                        <th>Both correct</th>
+                        <th>Both wrong</th>
+                        <th>Missed</th>
+                        <th>Correctly kept</th>
+                        <th>Helpful among deferred</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td>{{ m.outcomes.helpful }}</td>
+                        <td>{{ m.outcomes.harmful }}</td>
+                        <td>{{ m.outcomes.both_correct }}</td>
+                        <td>{{ m.outcomes.both_wrong }}</td>
+                        <td>{{ m.outcomes.missed }}</td>
+                        <td>{{ m.outcomes.ok_kept }}</td>
+                        <td>{{ m.deferral_precision|floatformat:3 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    {% endwith %}
+
+    <h3 class="centered-text">
+        Strategy 2: Learned policy
+    </h3>
+
+    <p class="centered-text">
+        The learned policy is a logistic regression model. Its training
+        target is one when the classifier is wrong and the expert is
+        correct. The inputs are the four class probabilities, maximum
+        confidence, prediction entropy, and the classifier's predicted class.
+    </p>
+
+    {% with m=defer_metrics.learned %}
+
+        <p class="centered-text">
+            Score threshold =
+            <strong>{{ m.threshold|floatformat:3 }}</strong>
+            &middot;
+
+            System accuracy:
+            <strong>{{ m.system_acc|floatformat:4 }}</strong>
+
+            (classifier-only:
+            {{ m.classifier_only_acc|floatformat:4 }},
+
+            <span class="{% if m.improvement_over_classifier > 0 %}best{% else %}error{% endif %}">
+                {% if m.improvement_over_classifier > 0 %}+{% endif %}
+                {{ m.improvement_over_classifier|floatformat:4 }}
+            </span>)
+
+            &middot;
+
+            Defer rate:
+            {{ m.defer_rate|floatformat:3 }}
+        </p>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Helpful</th>
+                        <th>Harmful</th>
+                        <th>Both correct</th>
+                        <th>Both wrong</th>
+                        <th>Missed</th>
+                        <th>Correctly kept</th>
+                        <th>Helpful among deferred</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td>{{ m.outcomes.helpful }}</td>
+                        <td>{{ m.outcomes.harmful }}</td>
+                        <td>{{ m.outcomes.both_correct }}</td>
+                        <td>{{ m.outcomes.both_wrong }}</td>
+                        <td>{{ m.outcomes.missed }}</td>
+                        <td>{{ m.outcomes.ok_kept }}</td>
+                        <td>{{ m.deferral_precision|floatformat:3 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="centered-text">
+            Where does the learned policy defer?
+        </h3>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Predicted class</th>
+                        <th>Total predicted</th>
+                        <th>Deferred</th>
+                        <th>Defer rate</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for row in m.per_class_defer %}
+                        <tr>
+                            <td>{{ row.name }}</td>
+                            <td>{{ row.n_predicted }}</td>
+                            <td>{{ row.n_deferred }}</td>
+                            <td>{{ row.defer_rate|floatformat:3 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% endwith %}
+
+    <h3 class="centered-text">
+        How to interpret the deferral outcomes
+    </h3>
+
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Outcome</th>
+                    <th>Classifier</th>
+                    <th>Expert</th>
+                    <th>Meaning</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td><strong>Helpful</strong></td>
+                    <td>Wrong</td>
+                    <td>Correct</td>
+                    <td>The expert corrects the classifier's error.</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Harmful</strong></td>
+                    <td>Correct</td>
+                    <td>Wrong</td>
+                    <td>Deferring changes a correct answer into a wrong one.</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Both correct</strong></td>
+                    <td>Correct</td>
+                    <td>Correct</td>
+                    <td>The answer stays correct, but deferring was unnecessary.</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Both wrong</strong></td>
+                    <td>Wrong</td>
+                    <td>Wrong</td>
+                    <td>The answer stays wrong; the expert did not introduce a new error.</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Missed</strong></td>
+                    <td>Wrong</td>
+                    <td>Correct</td>
+                    <td>The expert could have helped, but the system did not defer.</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Correctly kept</strong></td>
+                    <td>Correct</td>
+                    <td>Not used</td>
+                    <td>The system kept a correct classifier prediction.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p class="centered-text hint">
+        The system's improvement over the classifier can be verified using:
+        <br>
+        <strong>
+            (Helpful deferrals − Harmful deferrals) ÷ Number of test examples
+        </strong>
+    </p>
+
+    <hr>
+
+    <h2>Active Learning for Expert-Competence Discovery</h2>
+
+    <p class="centered-text">
+        We now assume that no expert labels are available initially.
+        The system has a limited expert-query budget and must use those
+        queries to estimate where the expert is reliable.
+    </p>
+
+    <p class="centered-text">
+        We compare uncertainty sampling with random sampling.
+        Uncertainty sampling selects articles for which the classifier has
+        the lowest maximum probability.
+    </p>
+
+    {% with m=active_metrics %}
+
+        <p class="centered-text">
+            Pool size:
+            <strong>{{ m.pool_size }}</strong>
+
+            &middot;
+
+            Query budget:
+            <strong>{{ m.budget }}</strong>
+
+            &middot;
+
+            Averaged over:
+            <strong>{{ m.n_seeds }} seeds</strong>
+        </p>
+
+        <p class="centered-text">
+            At the first query-budget checkpoint, uncertainty sampling's
+            competence-estimation error is
+
+            <strong>{{ m.early_gain|floatformat:4 }}</strong>
+
+            lower than random sampling. The difference becomes smaller as
+            both strategies collect more expert answers.
+        </p>
+
+        <img
+            src="{{ m.plot_url }}"
+            alt="Uncertainty sampling and random sampling comparison"
+            class="plot"
+        >
+
+    {% endwith %}
+
+    <hr>
+
+    <h2>Optional: Interactive human expert</h2>
+
+    <p class="centered-text">
+        The interactive page uses uncertainty sampling to choose which article
+        to show next. You can label the selected articles and compare your
+        answers with the hidden AG News labels.
+    </p>
+
+    <p class="centered-text">
+        <a href="{% url 'project3:human_loop' %}">
+            Try the human-expert demonstration &rarr;
+        </a>
+    </p>
+
+    <p class="centered-text">
+        <a href="{% url 'home:index' %}">
+            &larr; Home
+        </a>
+    </p>
+
+</div>
+
+<script>
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+</script>
+
+{% endblock %}
