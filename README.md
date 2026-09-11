@@ -4,14 +4,14 @@ Coursework for *Human-Centric Artificial Intelligence* at TUHH. Four small web
 applications, all living inside one Django project, each exploring a different
 angle on how people and machine learning models work together.
 
-**Group**
+**Group 40**
 
 | Name | Matriculation number |
 | --- | --- |
 | Moniya Mohan | 675659 |
 | Roshin Roy | 674412 |
 
-Repository: <https://github.com/roshin-roy/hcai-pbl>
+Repository: <https://github.com/roshin-roy/hcai-projects-pbl>
 
 ---
 
@@ -20,8 +20,7 @@ Repository: <https://github.com/roshin-roy/hcai-pbl>
 The project needs Python 3.10 or newer.
 
 ```bash
-git clone https://github.com/roshin-roy/hcai-pbl.git
-cd hcai-pbl
+git clone https://github.com/roshin-roy/hcai-projects-pbl
 
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
